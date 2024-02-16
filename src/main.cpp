@@ -27,6 +27,14 @@ int state = 0;
 char ssid[] = "ติ๊งต่าง";
 char pass[] = "12345678";
 
+void moveForward();
+void moveBackward();
+void turnLeft();
+void turnRight();
+void stop();
+void changePath();
+void compareDistance();
+
 // This function is called every time the Virtual Pin 0 state changes
 BLYNK_WRITE(V0)
 {
@@ -49,6 +57,26 @@ BLYNK_WRITE(V0)
     }
 }
 
+// This function is called every time the Virtual Pin 1 state changes
+BLYNK_WRITE(V1)
+{
+    // Set incoming value from pin V0 to a variable
+    int value = param.asInt();
+
+    // If value is 1, turn on LED
+    if (value == 1)
+    {
+        stop();         // stop forward movement
+        delay(250);     // add stop delay-aung
+        moveBackward(); // add back word-aung
+        delay(500);     // add move delay-aung
+        stop();         // add stop-aung
+        delay(250);
+        turnRight();
+        delay(200);
+    }
+}
+
 // This function is called every time the device is connected to the Blynk.Cloud
 BLYNK_CONNECTED()
 {
@@ -57,14 +85,6 @@ BLYNK_CONNECTED()
     Blynk.setProperty(V3, "onImageUrl", "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations_pressed.png");
     Blynk.setProperty(V3, "url", "https://docs.blynk.io/en/getting-started/what-do-i-need-to-blynk/how-quickstart-device-was-made");
 }
-
-void moveForward();
-void moveBackward();
-void turnLeft();
-void turnRight();
-void stop();
-void changePath();
-void compareDistance();
 
 void setup()
 {
@@ -88,13 +108,10 @@ void loop()
     Blynk.run();
     RangeInCentimeters = ultrasonic.read(); // Range in cm
     Blynk.virtualWrite(V4, RangeInCentimeters);
-    Blynk.virtualWrite(V2, digitalRead(IR_R));
-    Blynk.virtualWrite(V3, digitalRead(IR_L));
-    Serial.println(RangeInCentimeters);
 
     if (state == 1) // if the button is pressed
     {
-        if ((RangeInCentimeters < 30) || (digitalRead(IR_R) == 0) || (digitalRead(IR_L) == 0))
+        if ((RangeInCentimeters < 20) || (digitalRead(IR_R) == 0) || (digitalRead(IR_L) == 0))
         {
             changePath();
         }
@@ -109,7 +126,7 @@ void loop()
         stop();
     }
 
-    delay(250);
+    delay(200);
 }
 
 void stop()
@@ -172,7 +189,6 @@ void changePath()
     delay(500);
 
     servo.write(90); // return to center
-    delay(100);
 
     compareDistance();
 }
@@ -182,16 +198,16 @@ void compareDistance() // find the longest distance
     if (leftDistance > rightDistance)
     { // left is less obstructed
         turnLeft();
-        delay(100);
+        delay(50);
     }
     else if (rightDistance > leftDistance)
     { // right is less obstructed
         turnRight();
-        delay(100);
+        delay(50);
     }
     else
     { // both are equally obstructed
         turnRight();
-        delay(400);
+        delay(200);
     }
 }
