@@ -1,6 +1,6 @@
-#define BLYNK_TEMPLATE_ID "TMPL61s1fTJjW"
+#define BLYNK_TEMPLATE_ID "TMPL65o3f4u3m"
 #define BLYNK_TEMPLATE_NAME "Quickstart Template"
-#define BLYNK_AUTH_TOKEN "1nScGAI_xylsInEwYRBUJo_Pvc7VsIk3"
+#define BLYNK_AUTH_TOKEN "HSgM8vYDNFM_cv1BJr1TmDSu8rgl_zfN"
 #define BLYNK_PRINT Serial
 
 #include <Arduino.h>
@@ -86,10 +86,14 @@ void loop()
 {
     // put your main code here, to run repeatedly:
     Blynk.run();
+    RangeInCentimeters = ultrasonic.read(); // Range in cm
+    Blynk.virtualWrite(V4, RangeInCentimeters);
+    Blynk.virtualWrite(V2, digitalRead(IR_R));
+    Blynk.virtualWrite(V3, digitalRead(IR_L));
+    Serial.println(RangeInCentimeters);
+
     if (state == 1) // if the button is pressed
     {
-        RangeInCentimeters = ultrasonic.read(); // Range in cm
-
         if ((RangeInCentimeters < 30) || (digitalRead(IR_R) == 0) || (digitalRead(IR_L) == 0))
         {
             changePath();
@@ -178,16 +182,16 @@ void compareDistance() // find the longest distance
     if (leftDistance > rightDistance)
     { // left is less obstructed
         turnLeft();
-        delay(500);
+        delay(100);
     }
     else if (rightDistance > leftDistance)
     { // right is less obstructed
         turnRight();
-        delay(500);
+        delay(100);
     }
     else
     { // both are equally obstructed
         turnRight();
-        delay(1000);
+        delay(400);
     }
 }
