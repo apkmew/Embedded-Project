@@ -18,35 +18,64 @@
 #define RightForward 5
 #define RightBackward 17
 
-Servo servo;               // create servo object to control a servo
-Ultrasonic ultrasonic(16); // Ultrasonic Sensor
+// create servo object to control a servo
+Servo servo;
 
-long RangeInCentimeters, leftDistance, rightDistance; // variable to store the range in cm
-int state = 0;
+// create an Ultrasonic object
+Ultrasonic ultrasonic(16);
 
+// variable to store the range in cm
+long RangeInCentimeters, leftDistance, rightDistance;
+
+// 0 is manual mode, 1 is auto mode
+int mode = 0;
+
+// Manual Mode
+bool forward = 0;
+bool backward = 0;
+bool left = 0;
+bool right = 0;
+
+// Your WiFi credentials.
 char ssid[] = "ติ๊งต่าง";
 char pass[] = "12345678";
 
+// move functions
+void moveForward();
+void moveBackward();
+void turnLeft();
+void turnRight();
+void stop();
+void manualCar();
+void changePath();
+void compareDistance();
+void autoCar();
+
 // This function is called every time the Virtual Pin 0 state changes
+// chang mode
 BLYNK_WRITE(V0)
 {
-    // Set incoming value from pin V0 to a variable
-    int value = param.asInt();
+    mode = param.asInt();
+}
 
-    // Update state
-    Blynk.virtualWrite(V1, value);
+BLYNK_WRITE(V1)
+{
+    forward = param.asInt();
+}
 
-    state = value;
+BLYNK_WRITE(V2)
+{
+    backward = param.asInt();
+}
 
-    // If value is 1, turn on LED
-    if (value == 1)
-    {
-        digitalWrite(LED, HIGH);
-    }
-    else
-    {
-        digitalWrite(LED, LOW);
-    }
+BLYNK_WRITE(V3)
+{
+    left = param.asInt();
+}
+
+BLYNK_WRITE(V4)
+{
+    right = param.asInt();
 }
 
 // This function is called every time the device is connected to the Blynk.Cloud
@@ -56,60 +85,39 @@ BLYNK_CONNECTED()
     Blynk.setProperty(V3, "offImageUrl", "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations.png");
     Blynk.setProperty(V3, "onImageUrl", "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations_pressed.png");
     Blynk.setProperty(V3, "url", "https://docs.blynk.io/en/getting-started/what-do-i-need-to-blynk/how-quickstart-device-was-made");
+    digitalWrite(LED, HIGH);
 }
-
-void moveForward();
-void moveBackward();
-void turnLeft();
-void turnRight();
-void stop();
-void changePath();
-void compareDistance();
 
 void setup()
 {
-    // put your setup code here, to run once:
     Serial.begin(9600);
-    pinMode(LED, OUTPUT);           // LED
-    pinMode(LeftForward, OUTPUT);   // Left Forward
-    pinMode(LeftBackward, OUTPUT);  // Left Backward
-    pinMode(RightForward, OUTPUT);  // Right Forward
-    pinMode(RightBackward, OUTPUT); // Right Backward
-    pinMode(IR_R, INPUT);           // IR Right
-    pinMode(IR_L, INPUT);           // IR Left
-    servo.attach(21);               // Servo Pin
-    servo.write(90);                // Servo Initial Position
-    Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+    Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass); // Blynk
+    pinMode(LED, OUTPUT);                      // LED
+    pinMode(LeftForward, OUTPUT);              // Left Forward
+    pinMode(LeftBackward, OUTPUT);             // Left Backward
+    pinMode(RightForward, OUTPUT);             // Right Forward
+    pinMode(RightBackward, OUTPUT);            // Right Backward
+    pinMode(IR_R, INPUT);                      // IR Right
+    pinMode(IR_L, INPUT);                      // IR Left
+    servo.attach(21);                          // Servo Pin
+    servo.write(90);                           // Servo Initial Position
 }
 
 void loop()
 {
-    // put your main code here, to run repeatedly:
-    Blynk.run();
-    RangeInCentimeters = ultrasonic.read(); // Range in cm
-    Blynk.virtualWrite(V4, RangeInCentimeters);
-    Blynk.virtualWrite(V2, digitalRead(IR_R));
-    Blynk.virtualWrite(V3, digitalRead(IR_L));
+    Blynk.run();                            // Blynk
+    RangeInCentimeters = ultrasonic.read(); // get the range from the sensor
+    Serial.print("Distance: ");
     Serial.println(RangeInCentimeters);
 
-    if (state == 1) // if the button is pressed
+    if (mode == 1) // auto mode
     {
-        if ((RangeInCentimeters < 30) || (digitalRead(IR_R) == 0) || (digitalRead(IR_L) == 0))
-        {
-            changePath();
-        }
-        else
-        {
-            moveForward();
-        }
-        delay(250);
+        autoCar();
     }
-    else if (state == 0) // if the button is not pressed
+    else if (mode == 0) // manual mode
     {
-        stop();
+        manualCar();
     }
-
-    delay(250);
 }
 
 void stop()
@@ -152,14 +160,38 @@ void turnRight()
     digitalWrite(17, LOW);
 }
 
-void changePath()
+void manualCar() // manual mode
 {
-    stop();         // stop forward movement
-    delay(250);     // add stop delay-aung
-    moveBackward(); // add back word-aung
-    delay(500);     // add move delay-aung
-    stop();         // add stop-aung
-    delay(250);     // add stop delay-aung
+    if (forward)
+    {
+        moveForward();
+    }
+    else if (backward)
+    {
+        moveBackward();
+    }
+    else if (left)
+    {
+        turnLeft();
+    }
+    else if (right)
+    {
+        turnRight();
+    }
+    else if (!forward && !backward && !left && !right)
+    {
+        stop();
+    }
+}
+
+void changePath() // change path if there is an obstacle
+{
+    stop();
+    delay(250);
+    moveBackward();
+    delay(500);
+    stop();
+    delay(250);
 
     servo.write(45); // check distance to the right
     delay(500);
@@ -174,24 +206,37 @@ void changePath()
     servo.write(90); // return to center
     delay(100);
 
+    // compare the distances
     compareDistance();
 }
 
 void compareDistance() // find the longest distance
 {
-    if (leftDistance > rightDistance)
-    { // left is less obstructed
+    if (leftDistance > rightDistance) // left is less obstructed
+    {
         turnLeft();
         delay(100);
     }
-    else if (rightDistance > leftDistance)
-    { // right is less obstructed
+    else if (rightDistance > leftDistance) // right is less obstructed
+    {
         turnRight();
         delay(100);
     }
-    else
-    { // both are equally obstructed
+    else // if both distances are equal
+    {
         turnRight();
         delay(400);
+    }
+}
+
+void autoCar() // auto mode
+{
+    if ((RangeInCentimeters < 30) || (digitalRead(IR_R) == 0) || (digitalRead(IR_L) == 0))
+    {
+        changePath();
+    }
+    else
+    {
+        moveForward();
     }
 }
