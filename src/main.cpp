@@ -118,6 +118,7 @@ void setup()
     pinMode(IR_L, INPUT);                                                // IR Left
     servo.attach(21);                                                    // Servo Pin
     servo.write(90);                                                     // Servo Initial Position
+    stop();                                                             // Stop the car
 }
 
 void loop()
