@@ -1,13 +1,8 @@
-// #define BLYNK_TEMPLATE_ID "TMPL65o3f4u3m"
-// #define BLYNK_TEMPLATE_NAME "Quickstart Template"
+// Blynk App
 #define BLYNK_AUTH_TOKEN "l4chGUuJL7Yso2jt3yPCQ377vewUzICt"
 #define BLYNK_PRINT Serial
 
-#define BLYNK_TEMPLATE_ID "TMPL65o3f4u3m"
-#define BLYNK_TEMPLATE_NAME "Quickstart Template"
-#define BLYNK_AUTH_TOKEN "HSgM8vYDNFM_cv1BJr1TmDSu8rgl_zfN"
-#define BLYNK_PRINT Serial
-
+// include the libraries
 #include <Arduino.h>
 #include <Ultrasonic.h>
 #include <ESP32Servo.h>
@@ -15,6 +10,7 @@
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
 
+// define the pins for the motor driver
 #define LED 2
 #define IR_R 36
 #define IR_L 39
@@ -41,7 +37,7 @@ bool backward = 0;
 bool left = 0;
 bool right = 0;
 
-// initial position
+// initial position of the joystick
 int x = 50;
 int y = 50;
 
@@ -55,46 +51,23 @@ void moveBackward();
 void turnLeft();
 void turnRight();
 void stop();
-void manualCar();
 void manualJoystick();
 void changePath();
 void compareDistance();
 void autoCar();
 
-
 // This function is called every time the Virtual Pin 0 state changes
-// chang mode
-BLYNK_WRITE(V0)
+BLYNK_WRITE(V0) // change mode
 {
     mode = param.asInt();
 }
 
-BLYNK_WRITE(V1)
-{
-    forward = param.asInt();
-}
-
-BLYNK_WRITE(V2)
-{
-    backward = param.asInt();
-}
-
-BLYNK_WRITE(V3)
-{
-    left = param.asInt();
-}
-
-BLYNK_WRITE(V4)
-{
-    right = param.asInt();
-}
-
-// Get the joystick values
+// Get the joystick values x
 BLYNK_WRITE(V8)
 {
     x = param[0].asInt();
 }
-// Get the joystick values
+// Get the joystick values y
 BLYNK_WRITE(V9)
 {
     y = param[0].asInt();
@@ -123,21 +96,19 @@ void setup()
     pinMode(IR_L, INPUT);                                                // IR Left
     servo.attach(21);                                                    // Servo Pin
     servo.write(90);                                                     // Servo Initial Position
-    stop();                                                             // Stop the car
+    stop();                                                              // Stop the car
 }
 
 void loop()
 {
     Blynk.run();                            // Blynk
     RangeInCentimeters = ultrasonic.read(); // get the range from the sensor
-    Serial.print("Distance: ");
-    Serial.println(RangeInCentimeters);
 
     Blynk.virtualWrite(V5, RangeInCentimeters); // send the range to the Blynk app
     Blynk.virtualWrite(V6, digitalRead(IR_L));  // send the IR Right to the Blynk app
     Blynk.virtualWrite(V7, digitalRead(IR_R));  // send the IR Left to the Blynk app
 
-    WidgetLED led1(V10);
+    WidgetLED led1(V10); // IR Left LED
     if (digitalRead(IR_L) == 0)
     {
         led1.on();
@@ -147,7 +118,7 @@ void loop()
         led1.off();
     }
 
-    WidgetLED led2(V11);
+    WidgetLED led2(V11); // IR Right LED
     if (digitalRead(IR_R) == 0)
     {
         led2.on();
@@ -163,7 +134,6 @@ void loop()
     }
     else if (mode == 0) // manual mode
     {
-        // manualCar();
         manualJoystick();
     }
 }
@@ -208,30 +178,6 @@ void turnRight()
     digitalWrite(17, LOW);
 }
 
-void manualCar() // manual mode
-{
-    if (forward)
-    {
-        moveForward();
-    }
-    else if (backward)
-    {
-        moveBackward();
-    }
-    else if (left)
-    {
-        turnLeft();
-    }
-    else if (right)
-    {
-        turnRight();
-    }
-    else if (!forward && !backward && !left && !right)
-    {
-        stop();
-    }
-}
-
 void changePath() // change path if there is an obstacle
 {
     stop();
@@ -254,11 +200,10 @@ void changePath() // change path if there is an obstacle
     servo.write(90); // return to center
     delay(100);
 
-    // compare the distances
-    compareDistance();
+    compareDistance(); // compare the distances
 }
 
-void compareDistance() // find the longest distance
+void compareDistance() // find the less obstructed path
 {
     if (leftDistance > rightDistance) // left is less obstructed
     {
