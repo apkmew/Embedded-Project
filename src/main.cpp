@@ -42,8 +42,8 @@ int x = 50;
 int y = 50;
 
 // Your WiFi credentials.
-char ssid[] = "ติ๊งต่าง";
-char pass[] = "12345678";
+char ssid[] = "apkmew";
+char pass[] = "6410500360";
 
 // move functions
 void moveForward();
@@ -104,7 +104,7 @@ void loop()
     Blynk.run();                            // Blynk
     RangeInCentimeters = ultrasonic.read(); // get the range from the sensor
 
-    Blynk.virtualWrite(V5, RangeInCentimeters); // send the range to the Blynk app
+    // Blynk.virtualWrite(V5, RangeInCentimeters); // send the range to the Blynk app
     Blynk.virtualWrite(V6, digitalRead(IR_L));  // send the IR Right to the Blynk app
     Blynk.virtualWrite(V7, digitalRead(IR_R));  // send the IR Left to the Blynk app
 
@@ -224,7 +224,7 @@ void compareDistance() // find the less obstructed path
 
 void autoCar() // auto mode
 {
-    if ((RangeInCentimeters < 15) || (digitalRead(IR_R) == 0) || (digitalRead(IR_L) == 0))
+    if ((RangeInCentimeters < 30) || (digitalRead(IR_R) == 0) || (digitalRead(IR_L) == 0))
     {
         changePath();
     }
